@@ -1,6 +1,6 @@
 # Save Subtitles for IINA
 
-<img src="assets/sidebar.png" align="right" width="36%" alt="UI: Sidebar"/>
+<img src="assets/sidebar.png" align="right" width="34%" alt="UI: Sidebar"/>
 
 SRT subtitle export (with optional retiming) plugin for [IINA media player](https://iina.io/).
 
