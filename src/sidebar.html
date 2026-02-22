@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+<div class="top-content">
+
+    <!-- 1. Current Timestamp -->
+    <div class="section timestamp-section">
+        <div class="timestamp">
+            <span id="timestamp">--:--:--</span><span id="timestampMs" class="timestamp-ms">.---</span>
+        </div>
+    </div>
+
+    <!-- 2. Active Subtitle Track -->
+    <div class="section">
+        <div class="section-title">Active Subtitle</div>
+        <div class="select-wrapper">
+            <select id="subSelect"></select>
+        </div>
+        <div class="validation-msg error hidden" id="subError"></div>
+    </div>
+
+    <!-- 3. Destination -->
+    <div class="section">
+        <div class="section-title">Destination</div>
+
+        <div class="input-group">
+            <label>
+                Folder
+                <a href="#" id="dirReset" class="reset-link" title="Revert to video folder">(reset)</a>
+            </label>
+            <div class="flex-row">
+                <input type="text" id="dirInput" placeholder="/path/to/folder" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                <button id="dirBrowse" class="icon-btn" title="Browse">📁</button>
+            </div>
+            <div class="validation-msg error hidden" id="dirError">Folder not found</div>
+        </div>
+
+        <div class="input-group">
+            <label>
+                Filename
+                <a href="#" id="fileReset" class="reset-link" title="Revert to video filename">(reset)</a>
+            </label>
+            <div class="smart-input-container" id="fileContainer">
+                <input type="text" id="fileInput" placeholder="filename" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                <span class="smart-suffix" id="fileSuffix">.srt</span>
+            </div>
+            <div class="validation-msg error hidden" id="fileError">Enter a filename</div>
+            <div class="validation-msg warning hidden" id="fileWarning">File already exists</div>
+        </div>
+    </div>
+
+    <!-- 4. Shift Configuration -->
+    <div class="section">
+        <div class="section-title">Shift Configuration</div>
+
+        <div class="input-group">
+            <label>
+                Delay
+                <a href="#" id="delayReset" class="reset-link hidden" title="Reset to current IINA delay">(reset)</a>
+            </label>
+            <div class="smart-input-container">
+                <input type="text" id="delayInput" placeholder="ms or timestamp, e.g. 1500 | -00:01.500" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                <span class="smart-suffix hidden" id="delaySuffix"></span>
+            </div>
+        </div>
+
+        <!-- FPS Conversion -->
+        <div class="checkbox-group">
+            <label><input type="checkbox" id="cbFps"> FPS conversion</label>
+        </div>
+        <div class="sub-options hidden" id="fpsContainer">
+            <div class="sub-info hidden" id="fpsVideo">
+                Video FPS: <span id="fpsVideoValue" class="sub-info-value">-</span>
+            </div>
+            <div class="fps-inputs">
+                <input type="text" id="fpsSource" inputmode="decimal" placeholder="source fps" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                <span class="fps-separator">→</span>
+                <input type="text" id="fpsTarget" inputmode="decimal" placeholder="target fps" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            </div>
+            <div class="validation-msg error hidden" id="fpsError"></div>
+        </div>
+
+        <!-- Language Suffix -->
+        <div class="checkbox-group checkbox-group--spaced">
+            <label><input type="checkbox" id="cbLang" checked> Append language suffix</label>
+        </div>
+        <div class="sub-options" id="langContainer">
+            <div class="sub-info hidden" id="langInfo">
+                <span id="langInfoLabel">Detected:</span> <span id="langInfoValue" class="sub-info-value">-</span>
+            </div>
+            <div class="flex-row">
+                <input type="text" id="langInput" placeholder="language code, e.g. en" maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            </div>
+            <div class="validation-msg error hidden" id="langError">Enter a language code</div>
+        </div>
+
+        <!-- Options -->
+        <div class="checkbox-group checkbox-group--spaced">
+            <label><input type="checkbox" id="cbActive" checked> Set as active subtitle track</label>
+            <label><input type="checkbox" id="cbDelayName"> Append delay as suffix</label>
+            <label><input type="checkbox" id="cbOverwrite"> Overwrite without confirmation</label>
+        </div>
+    </div>
+
+    <!-- 5. Action Button + Status -->
+    <div class="section section--flush">
+        <div class="status-banner hidden" id="statusContainer">
+            <span class="status-icon" id="statusIcon"></span>
+            <span class="status-text" id="statusText"></span>
+        </div>
+        <button id="saveBtn" disabled>Save Subtitles</button>
+    </div>
+</div>
+
+<!-- 6. History -->
+<div class="section history-section">
+    <div class="section-title">Recent Shifts</div>
+    <div class="history" id="historyContainer">
+        <div class="empty-state">No history yet</div>
+    </div>
+</div>
+
+<script src="sidebar.js"></script>
+</body>
+</html>
