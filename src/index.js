@@ -241,7 +241,7 @@ function pauseChanged(paused) {
 function stopUpdating() {
     if (pauseHook) { event.off("mpv.pause.changed", pauseHook); pauseHook = null; }
     if (delayHook) { event.off("mpv.sub-delay.changed", delayHook); delayHook = null; }
-    if (subHook) { event.off("mpv.sid.changed", subHook); subHook = null; }
+    if (subHook) { event.off("mpv.current-tracks/sub/id.changed", subHook); subHook = null; }
     if (fileHook) { event.off("iina.file-loaded", fileHook); fileHook = null; }
 
     clearTimeout(timeUnhookTimeout);
@@ -253,7 +253,7 @@ function startUpdating() {
 
     pauseHook ??= event.on("mpv.pause.changed", pauseChanged);
     delayHook ??= event.on("mpv.sub-delay.changed", delayChanged);
-    subHook ??= event.on("mpv.sid.changed", subChanged);
+    subHook ??= event.on("mpv.current-tracks/sub/id.changed", subChanged);
     fileHook ??= event.on("iina.file-loaded", updateVideoInfo);
 }
 

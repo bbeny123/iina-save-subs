@@ -457,6 +457,8 @@ iina.onMessage(PluginEvent.INIT, data => {
     els.fpsVideoValue.textContent = states.videoFps > 0 ? states.videoFps : "N/A";
     toggle(els.fpsVideo, states.videoFps > 0);
 
+    els.cbLang.checked ||= !!data.fallbackLang;
+    toggle(els.langContainer, els.cbLang.checked);
     updateLang(data.lang, data.fallbackLang);
 
     validateFps();
@@ -486,14 +488,14 @@ iina.onMessage(PluginEvent.DELAY_UPDATE, delayMs => {
     updateDelaySuffix();
 
     if (els.cbDelayName.checked)
-        validatePath({ fileChanged: true });
+        validatePath();
 });
 
 iina.onMessage(PluginEvent.SUBS_UPDATE, ({ fallbackLang, lang, tracks }) => {
     updateLang(lang, fallbackLang);
     updateTrackUI(tracks);
     validateLang();
-    validatePath({ fileChanged: true });
+    validatePath();
 });
 
 iina.onMessage(PluginEvent.DIR_CHANGE, dirPath => {
@@ -560,7 +562,7 @@ els.cbLang.addEventListener('change', e => {
     toggle(els.langContainer, e.target.checked);
     hideStatus();
     validateLang();
-    validatePath({ fileChanged: true });
+    validatePath();
 });
 
 els.langInput.addEventListener('input', e => {
@@ -578,7 +580,7 @@ els.langInfoValue.addEventListener('click', () => {
 
     els.langInput.value = states.lang;
     validateLang();
-    validatePath({ fileChanged: true });
+    validatePath();
 });
 
 // --- Event Listeners ---
@@ -608,13 +610,12 @@ els.delayReset.addEventListener('click', e => {
 
     els.delayInput.value = states.subDelay !== 0 ? states.subDelay : "";
     updateDelaySuffix();
-    if (els.cbDelayName.checked)
-        validatePath({ fileChanged: true });
+    if (els.cbDelayName.checked) validatePath();
 });
 
 els.cbDelayName.addEventListener('change', () => {
     hideStatus();
-    validatePath({ fileChanged: true });
+    validatePath();
 });
 
 els.cbFps.addEventListener('change', e => {
@@ -660,8 +661,7 @@ els.historyContainer.addEventListener('click', e => {
     els.delayInput.value = item.dataset.rawInput;
     hideStatus();
     updateDelaySuffix();
-    if (els.cbDelayName.checked)
-        validatePath({ fileChanged: true });
+    if (els.cbDelayName.checked) validatePath();
 });
 
 document.addEventListener('visibilitychange', () => {
