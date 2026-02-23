@@ -72,7 +72,7 @@ const StatusConfig = {
 };
 
 const timers = { pathDebounce: null, fileResetCooldown: null, dirResetCooldown: null, browseCooldown: null, langCooldown: null, saveCooldown: null }
-const states = { dir: "", filename: "", lang: "", videoFps: 0, subDelay: 0, saveStatus: null }
+const states = { dir: "", filename: "", lang: "", videoFps: 0, subDelay: 0, saveStatus: null, playTimeout: null }
 const forms = {
     sub: { error: false, el: els.subError, borders: [els.subSelect] },
     dir: { error: false, el: els.dirError, borders: [els.dirInput] },
@@ -132,14 +132,14 @@ function validateFps() {
     const dst = els.fpsTarget.value?.trim();
 
     let error = "";
-    if (!dst)
-        error = 'Enter a target FPS';
-    else if ((Number(dst) || 0) <= 0)
-        error = 'Target FPS must be > 0';
-    else if (src && (Number(src) || 0) <= 0)
+    if (!src)
+        error = 'Enter a source FPS';
+    else if ((Number(src) || 0) <= 0)
         error = 'Source FPS must be > 0';
-    else if (!src && states.videoFps <= 0)
-        error = 'Enter a source FPS (video FPS unavailable)';
+    else if (dst && (Number(dst) || 0) <= 0)
+        error = 'Target FPS must be > 0';
+    else if (!dst && states.videoFps <= 0)
+        error = 'Enter a target FPS (video FPS unavailable)';
 
     toggleError(forms.fps, !!error, error, error.includes("arget") ? els.fpsSource : els.fpsTarget);
 }
@@ -387,9 +387,7 @@ function addToHistory(rawInput, ms) {
     if (els.historyContainer.querySelector('.empty-state'))
         els.historyContainer.replaceChildren();
 
-    const existingItem = els.historyContainer.querySelector(`[data-ms="${ms}"]`);
-    if (existingItem)
-        existingItem.remove();
+    els.historyContainer.querySelector(`[data-ms="${ms}"]`)?.remove();
 
     const div = document.createElement('div');
     div.className = 'history-item';
@@ -408,8 +406,8 @@ function addToHistory(rawInput, ms) {
 // --- Save Logic ---
 function save() {
     const fpsConvert = els.cbFps.checked;
-    const fpsSource = fpsConvert ? parseFloat(els.fpsSource.value) || states.videoFps : 0;
-    const fpsTarget = fpsConvert ? parseFloat(els.fpsTarget.value) || 0 : 0;
+    const fpsSource = fpsConvert ? parseFloat(els.fpsSource.value) || 0 : 0;
+    const fpsTarget = fpsConvert ? parseFloat(els.fpsTarget.value) || states.videoFps : 0;
 
     const delayStr = els.delayInput.value;
     const delayMs = delayToMs(delayStr);
@@ -441,8 +439,8 @@ iina.onMessage(PluginEvent.INIT, data => {
     }
 
     if (data.videoFps > 0) {
-        const currentFPS = Number(els.fpsSource.value?.trim());
-        if (!currentFPS || currentFPS === states.videoFps) els.fpsSource.value = data.videoFps;
+        const currentFPS = Number(els.fpsTarget.value?.trim());
+        if (!currentFPS || currentFPS === states.videoFps) els.fpsTarget.value = data.videoFps;
     }
 
     els.delayInput.value = data.delayMs !== 0 ? data.delayMs : "";
@@ -469,15 +467,21 @@ iina.onMessage(PluginEvent.INIT, data => {
 });
 
 iina.onMessage(PluginEvent.TIME_UPDATE, ({ time, paused }) => {
-    if (!paused || !time) {
-        els.timestamp.textContent = "-";
-        els.timestampMs.textContent = "";
+    clearTimeout(states.playTimeout);
+    states.playTimeout = null;
+
+    if (paused && time) {
+        const [main, ms] = time.split(',');
+        els.timestamp.textContent = main;
+        els.timestampMs.textContent = ms ? `.${ms}` : "";
         return;
     }
 
-    const [main, ms] = time.split(',');
-    els.timestamp.textContent = main;
-    els.timestampMs.textContent = ms ? `.${ms}` : "";
+    states.playTimeout = setTimeout(() => {
+        els.timestamp.textContent = "-";
+        els.timestampMs.textContent = "";
+        states.playTimeout = null;
+    }, 100);
 });
 
 iina.onMessage(PluginEvent.DELAY_UPDATE, delayMs => {
@@ -627,9 +631,9 @@ els.fpsVideoValue.addEventListener('click', () => {
     hideStatus();
 
     const videoFps = states.videoFps || 0;
-    if (videoFps <= 0 || els.fpsSource.value === `${videoFps}`) return;
+    if (videoFps <= 0 || els.fpsTarget.value === `${videoFps}`) return;
 
-    els.fpsSource.value = videoFps;
+    els.fpsTarget.value = videoFps;
     validateFps();
 });
 els.fpsSource.addEventListener('input', e => {

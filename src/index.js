@@ -18,16 +18,9 @@ const PluginEvent = {
 
 const SaveStatus = { OK: 0, ERROR_SUB: 1, ERROR_DIR: 2, ERROR_OTHER: 3, WARNING: 4 };
 
+const hooks = { pause: null, delay: null, sub: null, file: null, time: null, timeTimeout: null}
+const states = { sidebarVisible: false, fallbackLang: "" }
 const langCache = new Map();
-let fallbackLang;
-
-let sidebarVisible = false;
-let pauseHook = null;
-let fileHook = null;
-let delayHook = null;
-let subHook = null;
-let timeHook = null;
-let timeUnhookTimeout = null;
 
 const pad = (n, w = 2) => n.toString().padStart(w, '0');
 const toMs = (hh, mm, ss, ms) => hh * 3600000 + mm * 60000 + ss * 1000 + (+ms);
@@ -119,7 +112,7 @@ function registerMenuItem() {
     preferences.sync();
 
     menu.addItem(
-        menu.item("Subtitles...", () => sidebarVisible ? sidebar.hide() : sidebar.show(), options)
+        menu.item("Subtitles...", () => states.sidebarVisible ? sidebar.hide() : sidebar.show(), options)
     );
 }
 
@@ -157,7 +150,7 @@ function videoInfo() {
 
     const delayMs = Math.round(core.subtitle.delay * 1000);
 
-    return { videoDir, videoName, videoFps, delayMs, fallbackLang, lang: trackLangCode(), tracks: subTracks() };
+    return { videoDir, videoName, videoFps, delayMs, fallbackLang: states.fallbackLang, lang: trackLangCode(), tracks: subTracks() };
 }
 
 function filePath(dirPath, filename) {
@@ -220,56 +213,54 @@ function delayChanged(delay) {
 }
 
 function subChanged() {
-    sidebar.postMessage(PluginEvent.SUBS_UPDATE, { fallbackLang, lang: trackLangCode(), tracks: subTracks() });
+    sidebar.postMessage(PluginEvent.SUBS_UPDATE, { fallbackLang: states.fallbackLang, lang: trackLangCode(), tracks: subTracks() });
 }
 
 function pauseChanged(paused) {
     updateTime();
 
-    clearTimeout(timeUnhookTimeout);
+    clearTimeout(hooks.timeTimeout);
 
     if (paused) {
-        timeHook ??= event.on("mpv.time-pos.changed", updateTime);
-    } else if (timeHook) {
-        timeUnhookTimeout = setTimeout(() => {
-            event.off("mpv.time-pos.changed", timeHook);
-            timeHook = null;
+        hooks.time ??= event.on("mpv.time-pos.changed", updateTime);
+    } else if (hooks.time) {
+        hooks.timeTimeout = setTimeout(() => {
+            event.off("mpv.time-pos.changed", hooks.time);
+            hooks.time = null;
         }, 100);
     }
 }
 
 function stopUpdating() {
-    if (pauseHook) { event.off("mpv.pause.changed", pauseHook); pauseHook = null; }
-    if (delayHook) { event.off("mpv.sub-delay.changed", delayHook); delayHook = null; }
-    if (subHook) { event.off("mpv.current-tracks/sub/id.changed", subHook); subHook = null; }
-    if (fileHook) { event.off("iina.file-loaded", fileHook); fileHook = null; }
+    if (hooks.pause) { event.off("mpv.pause.changed", hooks.pause); hooks.pause = null; }
+    if (hooks.delay) { event.off("mpv.sub-delay.changed", hooks.delay); hooks.delay = null; }
+    if (hooks.sub) { event.off("mpv.current-tracks/sub/id.changed", hooks.sub); hooks.sub = null; }
+    if (hooks.file) { event.off("iina.file-loaded", hooks.file); hooks.file = null; }
 
-    clearTimeout(timeUnhookTimeout);
-    if (timeHook) { event.off("mpv.time-pos.changed", timeHook); timeHook = null; }
+    clearTimeout(hooks.timeTimeout);
+    if (hooks.time) { event.off("mpv.time-pos.changed", hooks.time); hooks.time = null; }
 }
 
 function startUpdating() {
     pauseChanged(core.status.paused)
 
-    pauseHook ??= event.on("mpv.pause.changed", pauseChanged);
-    delayHook ??= event.on("mpv.sub-delay.changed", delayChanged);
-    subHook ??= event.on("mpv.current-tracks/sub/id.changed", subChanged);
-    fileHook ??= event.on("iina.file-loaded", updateVideoInfo);
+    hooks.pause ??= event.on("mpv.pause.changed", pauseChanged);
+    hooks.delay ??= event.on("mpv.sub-delay.changed", delayChanged);
+    hooks.sub ??= event.on("mpv.current-tracks/sub/id.changed", subChanged);
+    hooks.file ??= event.on("iina.file-loaded", updateVideoInfo);
 }
 
 event.on("iina.window-loaded", () => {
-    fallbackLang = preferences.get("fallbackLang")?.toLowerCase().match(/[a-z]{1,3}/)?.[0] || "";
+    states.fallbackLang = preferences.get("fallbackLang")?.toLowerCase().match(/[a-z]{1,3}/)?.[0] || "";
 
     sidebar.loadFile("src/sidebar.html");
 
     sidebar.onMessage(PluginEvent.VISIBILITY, visible => {
-        sidebarVisible = visible;
-        if (visible) {
-            updateVideoInfo();
-            startUpdating();
-        } else {
-            stopUpdating();
-        }
+        states.sidebarVisible = visible;
+        if (!visible) return stopUpdating();
+
+        updateVideoInfo();
+        startUpdating();
     });
 
     sidebar.onMessage(PluginEvent.SUB_CHANGE, (id) => {

@@ -1,6 +1,6 @@
 {
   "identifier": "io.iina.save-subtitles",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": "Save Subtitles",
   "description": "Retime and export SRT subtitles",
   "author": {
@@ -8,7 +8,7 @@
     "url": "https://github.com/bbeny123"
   },
   "ghRepo": "bbeny123/iina-save-subs",
-  "ghVersion": 2,
+  "ghVersion": 3,
   "entry": "src/index.js",
   "helpPage": "src/help.html",
   "preferencesPage": "src/preferences.html",
